@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/yourusername/python-library-manager/main/assets/logo.png" width="120" alt="Python Library Manager Logo">
+  <img src="logo.png" width="120" alt="Python Library Manager Logo">
 </p>
 
 <h1 align="center">Python Library Manager</h1>
