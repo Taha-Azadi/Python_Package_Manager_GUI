@@ -103,9 +103,9 @@ def detect_python_interpreters() -> dict:
             pass
         # Also check common paths
         for pattern in (
-            r"C:\Python*\python.exe",
-            r"C:\Program Files\Python*\python.exe",
-            os.path.expanduser(r"~\AppData\Local\Programs\Python\Python*\python.exe"),
+            r"C:\\Python*\\python.exe",
+            r"C:\\Program Files\\Python*\\python.exe",
+            os.path.expanduser(r"~\\AppData\\Local\\Programs\\Python\\Python*\\python.exe"),
         ):
             for p in glob.glob(pattern):
                 add(p)
@@ -159,23 +159,19 @@ def fetch_pypi_info(package_name: str) -> dict:
         return {}
 
 
-def fetch_pypi_downloads(package_name: str) -> int:
-    """Fetch total downloads from pypistats API. Returns -1 on failure."""
-    try:
-        import json
-        url = f"https://pypistats.org/api/packages/{package_name}/overall"
-        with urllib.request.urlopen(url, timeout=8) as response:
-            data = json.loads(response.read().decode("utf-8"))
-            return sum(item.get("downloads", 0) for item in data.get("data", []))
-    except Exception:
-        return -1
-
-
 class LibManagerApp(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("Python Library Manager v1.0.1")
-        self.geometry("1000x750")
+
+        # Get screen dimensions for responsive sizing
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+
+        # Set window to 85% of screen size, minimum 900x650
+        win_width = max(int(screen_width * 0.85), 900)
+        win_height = max(int(screen_height * 0.85), 650)
+        self.geometry(f"{win_width}x{win_height}")
         self.minsize(900, 650)
 
         self._busy = False
@@ -184,6 +180,8 @@ class LibManagerApp(ctk.CTk):
         self.installed_packages = {}  # name -> {version, home_page, author, license}
         self.pypi_cache = {}  # name -> info dict
         self.autocomplete_list = []  # list of package names for autocomplete
+        self.details_window = None
+        self.autocomplete_buttons = []
 
         self._build_ui()
         self.refresh_interpreters()
@@ -195,8 +193,8 @@ class LibManagerApp(ctk.CTk):
         self.grid_rowconfigure(0, weight=1)
 
         # ========== LEFT SIDEBAR: Installed Packages Panel ==========
-        self.sidebar = ctk.CTkFrame(self, width=220)
-        self.sidebar.grid(row=0, column=0, sticky="nswe", padx=(10, 0), pady=10)
+        self.sidebar = ctk.CTkFrame(self, width=240)
+        self.sidebar.grid(row=0, column=0, sticky="nswe", padx=(10, 5), pady=10)
         self.sidebar.grid_rowconfigure(2, weight=1)
         self.sidebar.grid_propagate(False)
 
@@ -226,38 +224,43 @@ class LibManagerApp(ctk.CTk):
 
         # ========== RIGHT CONTENT ==========
         self.content = ctk.CTkFrame(self)
-        self.content.grid(row=0, column=1, sticky="nswe", padx=10, pady=10)
+        self.content.grid(row=0, column=1, sticky="nswe", padx=(5, 10), pady=10)
         self.content.grid_columnconfigure(0, weight=1)
-        self.content.grid_rowconfigure(3, weight=1)
+        # Row weights: header=0, py=0, pypi=0, entry=0, autocomplete=0, opts=0, 
+        #              btns=0, req=0, extra=0, progress=0, status=0, log=1 (expands)
+        self.content.grid_rowconfigure(11, weight=1)
 
         # ---- Header ----
         header = ctk.CTkFrame(self.content, fg_color="transparent")
-        header.grid(row=0, column=0, sticky="ew", padx=20, pady=(20, 10))
+        header.grid(row=0, column=0, sticky="ew", padx=20, pady=(15, 8))
+        header.grid_columnconfigure(0, weight=1)
+
+        title_frame = ctk.CTkFrame(header, fg_color="transparent")
+        title_frame.grid(row=0, column=0, sticky="w")
 
         ctk.CTkLabel(
-            header, text="📦 Python Library Manager",
+            title_frame, text="📦 Python Library Manager",
             font=ctk.CTkFont(size=20, weight="bold")
         ).pack(anchor="w")
 
         ctk.CTkLabel(
-            header,
+            title_frame,
             text="Enter one or more package names (separate with space or comma). "
                  "Use == >= <= for versions, e.g. requests==2.31.0",
             font=ctk.CTkFont(size=12),
             text_color="gray70",
-            wraplength=640,
+            wraplength=600,
             justify="left",
         ).pack(anchor="w", pady=(4, 0))
 
-        # ---- Theme Toggle ----
         self.theme_btn = ctk.CTkButton(
             header, text="☀ Light Mode", width=110, command=self.toggle_theme
         )
-        self.theme_btn.pack(anchor="e", side="right")
+        self.theme_btn.grid(row=0, column=1, sticky="e", padx=(10, 0))
 
         # ---- Python interpreter selection ----
         py_frame = ctk.CTkFrame(self.content)
-        py_frame.grid(row=1, column=0, sticky="ew", padx=20, pady=(10, 5))
+        py_frame.grid(row=1, column=0, sticky="ew", padx=20, pady=(8, 5))
 
         ctk.CTkLabel(py_frame, text="🐍 Python interpreter:",
                      font=ctk.CTkFont(size=13, weight="bold")).pack(
@@ -288,34 +291,32 @@ class LibManagerApp(ctk.CTk):
         )
 
         self.pypi_search_var = ctk.StringVar()
-        self.pypi_search_var.trace_add("write", self._on_pypi_search_change)
         self.pypi_search_entry = ctk.CTkEntry(
             pypi_frame, placeholder_text="e.g. requests", textvariable=self.pypi_search_var,
             width=250
         )
         self.pypi_search_entry.pack(side="left", padx=8, pady=10)
 
-        self.autocomplete_frame = ctk.CTkFrame(pypi_frame, fg_color="transparent")
-        self.autocomplete_frame.pack(side="left", padx=0, pady=10)
-
         ctk.CTkButton(
             pypi_frame, text="Search", width=80, command=self.on_pypi_search
         ).pack(side="left", padx=8, pady=10)
 
-        # ---- Package entry with autocomplete ----
+        # ---- Package entry (THE MAIN INPUT FIELD) ----
         entry_frame = ctk.CTkFrame(self.content, fg_color="transparent")
-        entry_frame.grid(row=3, column=0, sticky="ew", padx=20, pady=5)
+        entry_frame.grid(row=3, column=0, sticky="ew", padx=20, pady=(5, 5))
 
         self.ent = ctk.CTkEntry(
             entry_frame, placeholder_text="e.g. numpy pandas requests==2.31.0",
-            height=38,
+            height=38, font=ctk.CTkFont(size=13)
         )
         self.ent.pack(side="left", fill="x", expand=True)
         self.ent.bind("<Return>", lambda e: self.on_install())
         self.ent.bind("<KeyRelease>", self._on_entry_keyrelease)
+        self.ent.bind("<FocusOut>", lambda e: self.after(200, self._hide_autocomplete))
+        self.ent.bind("<FocusIn>", lambda e: self._on_entry_keyrelease(None))
 
-        # Autocomplete dropdown frame
-        self.autocomplete_popup = ctk.CTkFrame(self.content)
+        # ---- Autocomplete popup ----
+        self.autocomplete_popup = ctk.CTkFrame(self.content, border_width=1)
         self.autocomplete_popup.grid(row=4, column=0, sticky="w", padx=20)
         self.autocomplete_popup.grid_remove()
 
@@ -333,7 +334,7 @@ class LibManagerApp(ctk.CTk):
             opts_frame, text="Install to user site (--user)", variable=self.user_var
         ).pack(side="left")
 
-        # ---- Main buttons ----
+        # ---- Main action buttons ----
         btn_frame = ctk.CTkFrame(self.content, fg_color="transparent")
         btn_frame.grid(row=6, column=0, sticky="ew", padx=20, pady=(5, 5))
 
@@ -401,14 +402,14 @@ class LibManagerApp(ctk.CTk):
         self.status_lbl = ctk.CTkLabel(self.content, text="Ready", font=ctk.CTkFont(size=12))
         self.status_lbl.grid(row=10, column=0, sticky="w", padx=20)
 
-        # ---- Log box ----
+        # ---- Log box (EXPANDS to fill remaining space) ----
         self.log_box = ctk.CTkTextbox(self.content, font=ctk.CTkFont(family="Consolas", size=12))
         self.log_box.grid(row=11, column=0, sticky="nswe", padx=20, pady=(8, 5))
         self.log_box.configure(state="disabled")
 
         # ---- Log buttons ----
         log_btn_frame = ctk.CTkFrame(self.content, fg_color="transparent")
-        log_btn_frame.grid(row=12, column=0, sticky="ew", padx=20, pady=(0, 20))
+        log_btn_frame.grid(row=12, column=0, sticky="ew", padx=20, pady=(0, 15))
 
         ctk.CTkButton(
             log_btn_frame, text="Clear log", width=100, fg_color="gray30",
@@ -424,9 +425,6 @@ class LibManagerApp(ctk.CTk):
             log_btn_frame, text="📋 Copy log", width=100, fg_color="gray30",
             hover_color="gray20", command=self.copy_log,
         ).pack(side="right")
-
-        # ---- Package Details Panel (hidden by default, shown on package click) ----
-        self.details_window = None
 
         # Load autocomplete suggestions
         self._load_autocomplete_suggestions()
@@ -722,8 +720,8 @@ class LibManagerApp(ctk.CTk):
             except Exception:
                 pass
 
-            # Try to get more details with pip show
-            for name in list(packages.keys())[:50]:  # Limit to avoid timeout
+            # Try to get more details with pip show (limit to avoid timeout)
+            for name in list(packages.keys())[:30]:
                 try:
                     result = subprocess.run(
                         self._pip_base_cmd() + ["show", name],
@@ -764,7 +762,7 @@ class LibManagerApp(ctk.CTk):
             info = self.installed_packages[name]
             btn = ctk.CTkButton(
                 self.pkg_listbox, text=f"{name}=={info['version']}",
-                anchor="w", height=28,
+                anchor="w", height=28, font=ctk.CTkFont(size=11),
                 command=lambda n=name: self._on_package_click(n)
             )
             btn.pack(fill="x", pady=1)
@@ -910,7 +908,11 @@ class LibManagerApp(ctk.CTk):
 
         self.details_window = ctk.CTkToplevel(self)
         self.details_window.title(f"Details: {info['name']}")
-        self.details_window.geometry("500x550")
+
+        # Responsive size based on screen
+        sw = self.winfo_screenwidth()
+        sh = self.winfo_screenheight()
+        self.details_window.geometry(f"{min(500, int(sw*0.4))}x{min(550, int(sh*0.6))}")
         self.details_window.transient(self)
 
         ctk.CTkLabel(
@@ -1079,7 +1081,10 @@ class LibManagerApp(ctk.CTk):
 
         dialog = ctk.CTkToplevel(self)
         dialog.title("Requirements Compare")
-        dialog.geometry("600x500")
+
+        sw = self.winfo_screenwidth()
+        sh = self.winfo_screenheight()
+        dialog.geometry(f"{min(600, int(sw*0.5))}x{min(500, int(sh*0.6))}")
         dialog.transient(self)
 
         ctk.CTkLabel(
@@ -1222,14 +1227,13 @@ class LibManagerApp(ctk.CTk):
 
         self.autocomplete_popup.grid()
 
+    def _hide_autocomplete(self):
+        self.autocomplete_popup.grid_remove()
+
     def _select_autocomplete(self, match: str):
         self.ent.delete(0, "end")
         self.ent.insert(0, match)
         self.autocomplete_popup.grid_remove()
-
-    def _on_pypi_search_change(self, *args):
-        # Could add autocomplete for PyPI search too
-        pass
 
 
 if __name__ == "__main__":
