@@ -1,59 +1,56 @@
-# 📦 Python Package Manager GUI
+# 📦 Python Library Manager
 
-A modern **Python Package Manager** built with **Python** and **CustomTkinter**.
+A modern and user-friendly **Python Package Manager GUI** built with **CustomTkinter**.
 
-Manage Python packages with an intuitive graphical interface instead of using the command line.
+This application provides an easy way to install, uninstall, upgrade, and manage Python packages without using the command line. It automatically detects installed Python interpreters, allowing you to manage packages for any Python version installed on your system.
 
 ---
 
 ## ✨ Features
 
-* 🐍 Automatically detect installed Python interpreters
+* 🐍 Automatically detects installed Python interpreters
 * 🔄 Select the Python version you want to use
 * 📦 Install one or multiple packages
-* 🗑️ Uninstall packages
-* ⬆️ Upgrade installed packages
-* 🚀 Upgrade **pip**
-* 📋 Display installed packages
-* 📥 Install packages from `requirements.txt`
+* 🗑️ Uninstall installed packages
+* 📋 View installed packages
+* ⬆️ Upgrade pip with one click
+* 📥 Install packages from a `requirements.txt` file
 * 📤 Export installed packages to `requirements.txt`
-* 👤 Optional `--user` installation
-* ⬆️ Optional `--upgrade` installation
-* 🛡️ Package name validation using Regular Expressions
-* ⚡ Secure execution using `subprocess` (no `os.system`)
-* 🧵 Non-blocking operations using background threads
-* 📜 Live command output
-* 📋 Copy logs to clipboard
-* 💾 Save logs to a text file
-* 📊 Progress indicator
-* 🎨 Modern Dark UI built with **CustomTkinter**
+* 🔄 Refresh the interpreter list at any time
+* ⚡ Non-blocking operations using threads
+* 📜 Live command output and logging
+* 💾 Save logs to a file
+* 📋 Copy logs to the clipboard
+* ✅ Package name validation using regular expressions
+* 🔒 Secure subprocess execution (no `os.system`)
+* 🎨 Modern dark interface built with CustomTkinter
+* 🚫 Automatic button disabling while tasks are running
+* 📊 Progress indicator and status messages
+* 💻 Supports Windows, Linux, and macOS
 
 ---
 
-## 📸 Screenshots
+## 📸 Screenshot
 
-### Screenshot 1
-![Screenshot 1](screenshots/Screenshot(1).png)
-### Screenshot 2
-![Screenshot 2](screenshots/Screenshot(2).png)
-### Screenshot 3
-![Screenshot 3](screenshots/Screenshot(3).png)
-### Screenshot 4
-![Screenshot 4](screenshots/Screenshot(4).png)
-### Screenshot 5
-![Screenshot 5](screenshots/Screenshot(5).png)
+> Add screenshots of the application inside a `screenshots/` folder and update this section.
+
+```
+screenshots/
+├── main_window.png
+├── install_package.png
+└── package_list.png
+```
+
 ---
 
 ## 📁 Project Structure
 
-```text
-Python-Package-Manager-GUI/
-│
+```
+Python_Library_Manager/
 ├── main.py
-├── requirements.txt
 ├── README.md
+├── requirements.txt
 ├── LICENSE
-│
 └── screenshots/
 ```
 
@@ -61,22 +58,12 @@ Python-Package-Manager-GUI/
 
 ## 🚀 Installation
 
+Clone the repository:
+
 ```bash
-git clone https://github.com/Taha-Azadi/Python-Package-Manager-GUI
-
-cd Python-Package-Manager-GUI
-
-pip install -r requirements.txt
-
-python main.py
+git clone https://github.com/Taha-Azadi/Python_Library_Manager
+cd Python_Library_Manager
 ```
-
----
-
-## 🛠 Requirements
-
-* Python 3.8+
-* customtkinter
 
 Install dependencies:
 
@@ -84,61 +71,71 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
+Run the application:
+
+```bash
+python main.py
+```
+
 ---
 
-## 📚 Technologies
+## 📦 Requirements
 
-* Python
+* Python 3.8+
 * CustomTkinter
-* subprocess
-* threading
-* Regular Expressions
-* tkinter
-* urllib
-* glob
-* shutil
+
+Install dependencies manually if needed:
+
+```bash
+pip install customtkinter
+```
+
+---
+
+## 🛠️ Usage
+
+1. Launch the application.
+2. Select the desired Python interpreter.
+3. Enter one or more package names.
+4. Choose whether to use:
+
+   * `--upgrade`
+   * `--user`
+5. Click **Install** or **Uninstall**.
+6. View live logs in the built-in console.
+7. Export or import `requirements.txt` whenever needed.
 
 ---
 
 ## 🔒 Security
 
-This application executes **pip** commands using Python's **subprocess** module with argument lists instead of shell commands, reducing the risk of command injection.
-
-Package names are validated before execution using regular expressions.
+This project avoids using `os.system()` and instead relies on Python's `subprocess` module with argument lists, making command execution safer and resistant to command injection.
 
 ---
 
-## 💡 Why This Project?
+## 🧰 Built With
 
-Managing Python libraries from the terminal can be inconvenient for beginners.
-
-This project provides a clean and user-friendly desktop interface for installing, removing, updating, and managing Python packages across multiple Python installations.
-
----
-
-## 📌 Future Plans
-
-* 🔍 Search packages on PyPI
-* 📄 Package information viewer
-* 📦 Dependency tree
-* 🌐 Proxy support
-* 🔄 Package update checker
-* ⭐ Favorite packages
-* 🎨 Light/Dark theme switch
-* 🐍 Virtual Environment Manager
+* Python
+* CustomTkinter
+* subprocess
+* threading
+* tkinter
+* Regular Expressions (re)
 
 ---
 
 ## 📄 License
 
-This project is licensed under the **MIT License**.
+This project is licensed under the MIT License.
 
 ---
 
-## 👨‍💻 Developer
+## 👨‍💻 Author
 
 **Taha Azadi**
 
 GitHub: https://github.com/Taha-Azadi
 
-⭐ If you like this project, consider giving it a star!
+---
+
+⭐ If you find this project useful, consider giving it a star!
