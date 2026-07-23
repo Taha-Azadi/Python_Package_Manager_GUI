@@ -32,16 +32,16 @@ Manage Python packages with an intuitive graphical interface instead of using th
 
 ## 📸 Screenshots
 
-> Add screenshots of the application here.
-
-```
-screenshots/
-├── main.png
-├── install.png
-├── package-list.png
-└── export.png
-```
-
+### Screenshot 1
+![Screenshot 1](screenshots/Screenshot(1).png)
+### Screenshot 2
+![Screenshot 2](screenshots/Screenshot(2).png)
+### Screenshot 3
+![Screenshot 3](screenshots/Screenshot(3).png)
+### Screenshot 4
+![Screenshot 4](screenshots/Screenshot(4).png)
+### Screenshot 5
+![Screenshot 5](screenshots/Screenshot(5).png)
 ---
 
 ## 📁 Project Structure
